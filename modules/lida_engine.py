@@ -4,6 +4,7 @@ import altair as alt
 
 # Initialize LIDA with LLM disabled
 lida_manager = Manager()
+lida_manager.llm_engine = None 
 
 def generate_lida_charts(df, user_prompt: str):
     dataset_id = "user_data"
