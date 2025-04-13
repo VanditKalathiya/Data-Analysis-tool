@@ -3,7 +3,7 @@ from lida.datamodel import Goal
 import altair as alt
 
 # Initialize LIDA with LLM disabled
-lida_manager = Manager(llm=False)
+lida_manager = Manager()
 
 def generate_lida_charts(df, user_prompt: str):
     dataset_id = "user_data"
