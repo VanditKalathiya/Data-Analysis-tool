@@ -7,8 +7,6 @@ from modules.dataset_profiler import profile_dataset
 from modules.analyzer import get_summary_stats, get_missing_values, get_top_categoricals
 from modules.visualizer import plot_distribution, plot_correlation_heatmap, plot_scatter
 from modules.groq_chat import chat_with_groq
-from modules.lida_engine import generate_lida_charts
-import altair as alt
 
 st.set_page_config(page_title="AI Data Assistant", layout="centered")
 st.title("💬 AI Data Assistant")
@@ -87,20 +85,6 @@ Suggested target columns: {profile['suggested_targets']}
     except Exception as e:
         with st.chat_message("assistant"):
             st.error(f"❌ Failed to get response from Groq: {e}")
-
-    # 🔍 LIDA chart generation via natural prompt
-    if st.session_state.df is not None:
-        lida_keywords = ["lida", "generate chart", "chart this", "auto viz", "graph", "visualize"]
-        if any(kw in prompt.lower() for kw in lida_keywords):
-            with st.chat_message("assistant"):
-                st.markdown("🔍 Generating chart using LIDA...")
-                chart, summary = generate_lida_charts(st.session_state.df, prompt)
-
-                if chart:
-                    st.altair_chart(chart, use_container_width=True)
-                    st.markdown(f"🧠 **Insight**: {summary}")
-                else:
-                    st.warning(summary)
 
     # ✨ Trigger EDA on keywords
     if any(word in prompt.lower() for word in ["summary", "eda", "describe", "null", "missing"]):
