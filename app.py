@@ -9,7 +9,7 @@ from modules.analyzer import get_summary_stats, get_missing_values, get_top_cate
 from modules.visualizer import plot_distribution, plot_correlation_heatmap, plot_scatter
 from modules.groq_chat import chat_with_groq
 from modules.chart_parser import detect_chart_command, detect_bar_chart_intent
-from modules.chart_generator import render_chart, render_bar_chart
+from modules.chart_generator import render_bar_chart
 
 st.set_page_config(page_title="AI Data Assistant", layout="centered")
 st.title("💬 AI Data Assistant")
