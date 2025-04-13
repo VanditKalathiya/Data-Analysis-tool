@@ -4,3 +4,4 @@ matplotlib
 seaborn
 openai
 python-dotenv
+lida==0.1.15
