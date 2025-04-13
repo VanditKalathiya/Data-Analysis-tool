@@ -2,14 +2,14 @@ import streamlit as st
 import pandas as pd
 import time
 import re
+import base64
 from modules.file_loader import load_file
 from modules.dataset_profiler import profile_dataset
 from modules.analyzer import get_summary_stats, get_missing_values, get_top_categoricals
 from modules.visualizer import plot_distribution, plot_correlation_heatmap, plot_scatter
 from modules.groq_chat import chat_with_groq
-from modules.chart_parser import detect_chart_command
-from modules.chart_generator import render_chart
-
+from modules.chart_parser import detect_chart_command, detect_bar_chart_intent
+from modules.chart_generator import render_chart, render_bar_chart
 
 st.set_page_config(page_title="AI Data Assistant", layout="centered")
 st.title("💬 AI Data Assistant")
@@ -89,39 +89,14 @@ Suggested target columns: {profile['suggested_targets']}
         with st.chat_message("assistant"):
             st.error(f"❌ Failed to get response from Groq: {e}")
 
-        # 🧠 Check if the user prompt looks like a chart request
-    if st.session_state.df is not None:
-        chart_type, columns = detect_chart_command(prompt)
-        if chart_type:
-            with st.chat_message("assistant"):
-                st.markdown(f"📊 Generating {chart_type} chart...")
-                img_base64 = render_chart(st.session_state.df, chart_type, columns)
-                if img_base64:
-                    st.markdown(f"![Chart](data:image/png;base64,{img_base64})")
-                else:
-                    st.warning("⚠️ Could not generate the requested chart.")
-
-    # ✨ Trigger EDA on keywords
-    if any(word in prompt.lower() for word in ["summary", "eda", "describe", "null", "missing"]):
-        if st.session_state.df is not None:
-            with st.chat_message("assistant"):
-                st.markdown("📊 **Summary Statistics**")
-                st.dataframe(get_summary_stats(st.session_state.df))
-
-                st.markdown("🧼 **Missing Values**")
-                st.dataframe(get_missing_values(st.session_state.df))
-
-                st.markdown("🔤 **Top Categorical Values**")
-                st.dataframe(get_top_categoricals(st.session_state.df))
-
-    # 📊 Visualizations via chat
+    # 📊 Visualizations via keywords
     if st.session_state.df is not None:
         lower_prompt = prompt.lower()
         df = st.session_state.df
         num_cols = df.select_dtypes(include='number').columns
         just_charts = "no code" in lower_prompt or "only charts" in lower_prompt or "just plot" in lower_prompt
 
-        # Histogram (distribution)
+        # Histogram
         for col in num_cols:
             if col.lower() in lower_prompt and "distribution" in lower_prompt:
                 with st.chat_message("assistant"):
@@ -147,3 +122,29 @@ Suggested target columns: {profile['suggested_targets']}
                 if not just_charts:
                     st.markdown(f"📈 Scatterplot: `{y_col}` vs `{x_col}`")
                 st.pyplot(plot_scatter(df, x_col, y_col))
+
+        # 🧠 Bar chart via NLP detection
+        chart_type, cols = detect_bar_chart_intent(prompt)
+        if chart_type == "bar" and len(cols) == 2:
+            x_col, y_col = cols
+            with st.chat_message("assistant"):
+                st.markdown(f"📊 Bar chart of `{y_col}` by `{x_col}`...")
+                encoded_img, summary = render_bar_chart(df, x_col, y_col)
+                if encoded_img:
+                    st.markdown(f"![Bar Chart](data:image/png;base64,{encoded_img})")
+                    st.markdown(summary)
+                else:
+                    st.warning(summary)
+
+    # 🧠 EDA triggers
+    if any(word in prompt.lower() for word in ["summary", "eda", "describe", "null", "missing"]):
+        if st.session_state.df is not None:
+            with st.chat_message("assistant"):
+                st.markdown("📊 **Summary Statistics**")
+                st.dataframe(get_summary_stats(st.session_state.df))
+
+                st.markdown("🧼 **Missing Values**")
+                st.dataframe(get_missing_values(st.session_state.df))
+
+                st.markdown("🔤 **Top Categorical Values**")
+                st.dataframe(get_top_categoricals(st.session_state.df))
