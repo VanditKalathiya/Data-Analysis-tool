@@ -110,9 +110,12 @@ Suggested target columns: {profile['suggested_targets']}
         for col in num_cols:
             if col.lower() in lower_prompt and "distribution" in lower_prompt:
                 with st.chat_message("assistant"):
-                    if not just_charts:
-                        st.markdown(f"📊 Distribution of `{col}`:")
-                    st.pyplot(plot_distribution(df, col))
+                    if df[col].dropna().nunique() > 1:
+                        if not just_charts:
+                            st.markdown(f"📊 Distribution of `{col}`:")
+                        st.pyplot(plot_distribution(df, col))
+                    else:
+                        st.warning(f"Column `{col}` has insufficient variation to plot.")
 
         # Correlation heatmap
         if "correlation" in lower_prompt or "heatmap" in lower_prompt:
