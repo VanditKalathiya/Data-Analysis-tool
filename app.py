@@ -7,6 +7,9 @@ from modules.dataset_profiler import profile_dataset
 from modules.analyzer import get_summary_stats, get_missing_values, get_top_categoricals
 from modules.visualizer import plot_distribution, plot_correlation_heatmap, plot_scatter
 from modules.groq_chat import chat_with_groq
+from modules.chart_parser import detect_chart_command
+from modules.chart_generator import render_chart
+
 
 st.set_page_config(page_title="AI Data Assistant", layout="centered")
 st.title("💬 AI Data Assistant")
@@ -85,6 +88,18 @@ Suggested target columns: {profile['suggested_targets']}
     except Exception as e:
         with st.chat_message("assistant"):
             st.error(f"❌ Failed to get response from Groq: {e}")
+
+        # 🧠 Check if the user prompt looks like a chart request
+    if st.session_state.df is not None:
+        chart_type, columns = detect_chart_command(prompt)
+        if chart_type:
+            with st.chat_message("assistant"):
+                st.markdown(f"📊 Generating {chart_type} chart...")
+                img_base64 = render_chart(st.session_state.df, chart_type, columns)
+                if img_base64:
+                    st.markdown(f"![Chart](data:image/png;base64,{img_base64})")
+                else:
+                    st.warning("⚠️ Could not generate the requested chart.")
 
     # ✨ Trigger EDA on keywords
     if any(word in prompt.lower() for word in ["summary", "eda", "describe", "null", "missing"]):
